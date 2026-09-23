@@ -1,10 +1,13 @@
+from pathlib import Path
 import pandas as pd
 import numpy as np
 
 print("-> Iniciando a leitura do arquivo...")
+planilhas_path = Path('./planilhas')
 
 # 1. Carregar a folha de cálculo pulando o cabeçalho desconfigurado (as 2 primeiras linhas)
-df = pd.read_excel('Execução da despesa-1.xlsx', sheet_name=0, skiprows=2)
+planilha_original = planilhas_path / 'Execução da despesa-1.xlsx'
+df = pd.read_excel(planilha_original, sheet_name=0, skiprows=2)
 
 print(f"-> Dados carregados! A planilha possui {df.shape[0]} linhas e {df.shape[1]} colunas.")
 
@@ -57,30 +60,32 @@ df['Natureza_Despesa_Cod'] = df['Natureza_Despesa_Cod'].astype(str).str.strip()
 # Regra 1: Categorização Principal
 df['Categoria_Natureza'] = np.where(
     df['Natureza_Despesa_Cod'].str.startswith('3'),
-    'Material de consumo e serviço',
-    'Investimentos'
+    'Despesas Correntes',
+    'Despesas de Capital'
 )
 
 # Regra 2: Padronização dos Nomes conforme o Manual (Quadro 1 e 2)
 mapa_naturezas_manual = {
-    '339014': 'DIÁRIAS PESSOAL CIVIL',
-    '339018': 'AUXÍLIO FINANCEIRO A ESTUDANTES',
-    '339020': 'AUXÍLIO FINANCEIRO A PESQUISADORES',
-    '339030': 'MATERIAL DE CONSUMO',
-    '339031': 'PREMIAÇÕES CULTURAIS, ARTÍSTICAS, CIENTÍFICAS, DESPORTIVAS E OUTROS',
-    '339032': 'MATERIAL, BEM OU SERVIÇO PARA DISTRIBUIÇÃO GRATUITA',
-    '339033': 'PASSAGENS E DESPESAS COM LOCOMOÇÃO',
-    '339035': 'SERVICOS DE CONSULTORIA',
-    '339036': 'OUTROS SERVIÇOS DE TERCEIROS PESSOA FÍSICA',
-    '339037': 'LOCAÇÃO DE MÃO DE OBRA',
-    '339039': 'OUTROS SERVIÇOS DE TERCEIROS - PESSOA JURÍDICA',
-    '339040': 'SERVIÇOS DE TECNOLOGIA DA INFORMAÇÃO E COMUNICAÇÃO',
-    '339047': 'OBRIGAÇÕES TRIBUTÁRIAS E CONTRIBUTIVAS',
-    '339048': 'OUTROS AUXÍLIOS FINANCEIROS A PESSOAS FÍSICAS',
-    '339092': 'DESPESAS DE EXERCÍCIOS ANTERIORES',
-    '339093': 'INDENIZAÇÕES E RESTITUIÇÕES',
-    '449051': 'OBRAS E INSTALAÇÕES',
-    '449052': 'EQUIPAMENTOS E MATERIAL PERMANENTE'
+    '339014': 'Diárias - Pessoal Civil',
+    '339018': 'Auxílio Financeiro a Estudantes',
+    '339020': 'Auxílio Financeiro a Pesquisadores',
+    '339030': 'Material de Consumo',
+    '339031': 'Premiações Culturais, Artísticas, Científicas, Desportivas e Outros',
+    '339032': 'Material, Bem ou Serviço para Distribuição Gratuita',
+    '339033': 'Passagens e Despesas com Locomoção',
+    '339035': 'Serviços de Consultoria',
+    '339036': 'Outros Serviços de Terceiros - Pessoa Física',
+    '339037': 'Locação de Mão de Obra',
+    '339039': 'Outros Serviços de Terceiros - Pessoa Jurídica',
+    '339040': 'Serviços de Tecnologia da Informação e Comunicação - pessoa jurídica',
+    '339047': 'Obrigações Tributárias e Contributivas',
+    '339048': 'Outros Auxílios Financeiros a Pessoas Físicas',
+    '339092': 'Despesas de Exercícios Anteriores',
+    '339093': 'Indenizações e Restituições',
+    '339147': 'Obrigações Tributárias e Contributivas em Operações Intraorçamentárias',
+    '449051': 'Obras e Instalações',
+    '449052': 'Equipamentos e Material Permanente',
+    '449039': 'Serviços de terceiros - Pessoa Jurídica (Capital)'
 }
 
 df['Codigo_6_digitos'] = df['Natureza_Despesa_Cod'].str.replace('.', '', regex=False).str[:6]
@@ -93,13 +98,25 @@ df = df.drop(columns=['Codigo_6_digitos'])
 df['Total_RAP_Pagos'] = df['RAP_Processados_Pagos'] + df['RAP_Nao_Processados_Pagos']
 df['Total_Pago_Geral'] = df['Despesas_Pagas'] + df['Total_RAP_Pagos']
 
+# 5.4 Variável Anos_RAP (Contém todos os anos de emissão, exceto o ano vigente)
+df['Ano_Emissao_Empenho'] = df['Ano_Emissao_Empenho'].astype('Int64')
+df['Ano_Lancamento'] = df['Ano_Lancamento'].astype('Int64')
+
+ano_vigente = df['Ano_Lancamento'].max()
+df['Anos_RAP'] = np.where(
+    df['Ano_Emissao_Empenho'] != ano_vigente,
+    df['Ano_Emissao_Empenho'],
+    np.nan
+)
+df['Anos_RAP'] = df['Anos_RAP'].astype('Int64')
+
 # 6. Exportar a base final tratada
 print(f"-> Tratamento concluído. Exportando {df.shape[0]} linhas...")
 
 # Salva em Excel
-df.to_excel('Base_Tratada_Painel_PRAD.xlsx', index=False)
+df.to_excel(planilhas_path / 'Base_Tratada_Painel_PRAD.xlsx', index=False)
 
 # Salva em CSV (Plano B para subir no painel)
-df.to_csv('Base_Tratada_Painel_PRAD.csv', index=False, sep=';', encoding='utf-8-sig')
+df.to_csv(planilhas_path / 'Base_Tratada_Painel_PRAD.csv', index=False, sep=';', encoding='utf-8-sig')
 
 print("-> Arquivos gerados com sucesso! Verifique a pasta.")
