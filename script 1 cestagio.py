@@ -4,7 +4,7 @@ import numpy as np
 
 print("-> Iniciando a leitura do arquivo...")
 planilhas_path = Path('./planilhas')
-planilha_original = planilhas_path / 'Execução da despesa-1.xlsx'
+planilha_original = planilhas_path / 'Execução da despesa.xlsx'
 
 if not planilha_original.exists():
     print("Arquivo não encontrado:", planilha_original.resolve())
@@ -72,6 +72,8 @@ df['Categoria_Natureza'] = np.where(
 )
 
 mapa_naturezas_manual = {
+    '335041': 'Contribuições',
+    '335092': 'Despesas de Exercícios Anteriores',
     '339014': 'Diárias - Pessoal Civil',
     '339018': 'Auxílio Financeiro a Estudantes',
     '339020': 'Auxílio Financeiro a Pesquisadores',
@@ -80,25 +82,31 @@ mapa_naturezas_manual = {
     '339032': 'Material, Bem ou Serviço para Distribuição Gratuita',
     '339033': 'Passagens e Despesas com Locomoção',
     '339035': 'Serviços de Consultoria',
-    '339036': 'Outros Serviços de Terceiros - Pessoa Física',
+    '339036': 'Outros Serviços de Terceiros - Pessoa Física - Direito Privado',
     '339037': 'Locação de Mão de Obra',
     '339039': 'Outros Serviços de Terceiros - Pessoa Jurídica',
     '339040': 'Serviços de Tecnologia da Informação e Comunicação - pessoa jurídica',
     '339047': 'Obrigações Tributárias e Contributivas',
     '339048': 'Outros Auxílios Financeiros a Pessoas Físicas',
-    '339092': 'Despesas de Exercícios Anteriores',
+    '339092': 'Despesas de Exercícios Anteriores - Aplicações Diretas',
     '339093': 'Indenizações e Restituições',
+    '339139': 'Outros Serviços de Terceiros - Pessoa Física - Direito Público',
     '339147': 'Obrigações Tributárias e Contributivas em Operações Intraorçamentárias',
+    '339193': 'Indenizações e Restituições em Operações Intraorçamentárias',
     '449051': 'Obras e Instalações',
     '449052': 'Equipamentos e Material Permanente',
     '449039': 'Serviços de terceiros - Pessoa Jurídica (Capital)'
 }
 df['Natureza_Despesa_Nome'] = (
     df['Natureza_Despesa_Cod'].str[:6].map(mapa_naturezas_manual)
-    .fillna(df['Natureza_Despesa_Nome'])
+    .fillna(df['Natureza_Despesa_Nome'].str.strip().str.title())
 )
 
-# 5.3 MÉTRICAS DA EXECUÇÃO ANUAL
+# 5.3 Padronização de nomes (UG Responsável e Favorecido)
+df['UG_Responsavel_Nome'] = df['UG_Responsavel_Nome'].str.strip().str.title()
+df['Favorecido_Nome'] = df['Favorecido_Nome'].str.strip().str.title()
+
+# 5.4 MÉTRICAS DA EXECUÇÃO ANUAL
 # RAP não processado "a pagar" = inscritos + reinscritos
 df['RAP_NP_Total'] = df['RAP_NP_Inscritos'] + df['RAP_NP_Reinscritos']
 
@@ -113,13 +121,11 @@ df['Saldo_a_Liquidar'] = df['Montante'] - df['Execucao_Liquidacao']
 
 # RAP Pago (Tudo de RAP Pago)
 df['Total_RAP_Pagos'] = df['RAP_NP_Pagos']
-df['Total_Pago_RAP'] = df['Total_RAP_Pagos']
 
 # (3) Total Geral Pago = Soma de Despesas Pagas + Total RAP Pago
 df['Total_Pago_Geral'] = df['Despesas_Pagas'] + df['Total_RAP_Pagos']
-df['Pagamento'] = df['Total_Pago_Geral']
 
-# 5.4 Anos_RAP: apenas os anos de emissão do empenho (sem valores nulos)
+# 5.5 Anos_RAP: apenas os anos de emissão do empenho (sem valores nulos)
 df['Ano_Emissao_Empenho'] = pd.to_numeric(df['Ano_Emissao_Empenho'], errors='coerce').astype('Int64')
 df['Ano_Lancamento'] = pd.to_numeric(df['Ano_Lancamento'], errors='coerce').astype('Int64')
 ano_vigente = df['Ano_Lancamento'].max()
@@ -131,7 +137,7 @@ df['Anos_RAP'] = np.where(
 )
 df['Anos_RAP'] = df['Anos_RAP'].astype('Int64')
 
-# 5.5 Colunas de Filtro com Código e Nome (para o Looker Studio)
+# 5.6 Colunas de Filtro com Código e Nome (para o Looker Studio)
 def limpa_codigo(val):
     if pd.isna(val):
         return ''
@@ -158,9 +164,9 @@ print(f"RAP NP (insc.+reinsc.)  {df['RAP_NP_Total'].sum():>18,.2f}")
 print(f"(1) Montante .......... {df['Montante'].sum():>18,.2f}")
 print(f"(2) Execução/Liquidação {df['Execucao_Liquidacao'].sum():>18,.2f}")
 print(f"    Saldo a liquidar .. {df['Saldo_a_Liquidar'].sum():>18,.2f}")
-print(f"(3) Pagamento ......... {df['Pagamento'].sum():>18,.2f}")
+print(f"(3) Pagamento ......... {df['Total_Pago_Geral'].sum():>18,.2f}")
 print(f"Linhas com saldo negativo: {(df['Saldo_a_Liquidar'] < -0.01).sum()}")
-print(f"Linhas com pagamento > liquidação: {(df['Pagamento'] > df['Execucao_Liquidacao'] + 0.01).sum()}")
+print(f"Linhas com pagamento > liquidação: {(df['Total_Pago_Geral'] > df['Execucao_Liquidacao'] + 0.01).sum()}")
 
 # 7. Exportar
 print(f"\n-> Exportando {df.shape[0]} linhas...")
