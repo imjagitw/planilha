@@ -111,14 +111,45 @@ df['Execucao_Liquidacao'] = df['Despesas_Liquidadas'] + df['RAP_NP_Liquidados']
 # Saldo = (1) - (2)  -> "a liquidar"
 df['Saldo_a_Liquidar'] = df['Montante'] - df['Execucao_Liquidacao']
 
-# (3) Pagamento = Empenhos pagos + RAP NP (liquidados) pagos
-df['Pagamento'] = df['Despesas_Pagas'] + df['RAP_NP_Pagos']
+# RAP Pago (Tudo de RAP Pago)
+df['Total_RAP_Pagos'] = df['RAP_NP_Pagos']
+df['Total_Pago_RAP'] = df['Total_RAP_Pagos']
 
-# 5.4 Anos_RAP: anos de emissão diferentes do ano vigente
+# (3) Total Geral Pago = Soma de Despesas Pagas + Total RAP Pago
+df['Total_Pago_Geral'] = df['Despesas_Pagas'] + df['Total_RAP_Pagos']
+df['Pagamento'] = df['Total_Pago_Geral']
+
+# 5.4 Anos_RAP: apenas os anos de emissão do empenho (sem valores nulos)
 df['Ano_Emissao_Empenho'] = pd.to_numeric(df['Ano_Emissao_Empenho'], errors='coerce').astype('Int64')
 df['Ano_Lancamento'] = pd.to_numeric(df['Ano_Lancamento'], errors='coerce').astype('Int64')
 ano_vigente = df['Ano_Lancamento'].max()
-df['Anos_RAP'] = df['Ano_Emissao_Empenho'].where(df['Ano_Emissao_Empenho'] != ano_vigente)
+df['Ano_Vigente'] = ano_vigente
+df['Anos_RAP'] = np.where(
+    df['Ano_Emissao_Empenho'] != ano_vigente,
+    df['Ano_Emissao_Empenho'],
+    np.nan
+)
+df['Anos_RAP'] = df['Anos_RAP'].astype('Int64')
+
+# 5.5 Colunas de Filtro com Código e Nome (para o Looker Studio)
+def limpa_codigo(val):
+    if pd.isna(val):
+        return ''
+    s = str(val).strip()
+    return s[:-2] if s.endswith('.0') else s
+
+df['UG_Responsavel_Filtro'] = (
+    df['UG_Responsavel_Cod'].map(limpa_codigo).replace('', 'Sem código') +
+    ' - ' + df['UG_Responsavel_Nome'].fillna('').astype(str).str.strip()
+)
+df['Favorecido_Filtro'] = (
+    df['Favorecido_CNPJ'].map(limpa_codigo).replace('', 'Sem código') +
+    ' - ' + df['Favorecido_Nome'].fillna('').astype(str).str.strip()
+)
+df['Natureza_Filtro'] = (
+    df['Natureza_Despesa_Cod'].map(limpa_codigo).replace('', 'Sem código') +
+    ' - ' + df['Natureza_Despesa_Nome'].fillna('').astype(str).str.strip()
+)
 
 # 6. Conferência rápida dos totais
 print("\n--- CONFERÊNCIA (R$) ---")
