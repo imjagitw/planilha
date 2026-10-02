@@ -1,3 +1,5 @@
 .venv/
 planilhas/
 docs/
+.vscode/
+__pycache__/
