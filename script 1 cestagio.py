@@ -4,7 +4,9 @@ import numpy as np
 
 print("-> Iniciando a leitura do arquivo...")
 planilhas_path = Path('./planilhas')
-planilha_original = planilhas_path / 'Execução da despesa.xlsx'
+planilha_original = planilhas_path / 'Execução da despesa-1.xlsx'
+if not planilha_original.exists():
+    planilha_original = planilhas_path / 'Execução da despesa.xlsx'
 
 if not planilha_original.exists():
     print("Arquivo não encontrado:", planilha_original.resolve())
@@ -67,44 +69,79 @@ df['Natureza_Despesa_Cod'] = (
 
 df['Categoria_Natureza'] = np.where(
     df['Natureza_Despesa_Cod'].str.startswith('3'),
-    'Despesas Correntes',
-    'Despesas de Capital'
+    'DESPESAS CORRENTES',
+    'DESPESAS DE CAPITAL'
 )
 
 mapa_naturezas_manual = {
-    '335041': 'Contribuições',
-    '335092': 'Despesas de Exercícios Anteriores',
-    '339014': 'Diárias - Pessoal Civil',
-    '339018': 'Auxílio Financeiro a Estudantes',
-    '339020': 'Auxílio Financeiro a Pesquisadores',
-    '339030': 'Material de Consumo',
-    '339031': 'Premiações Culturais, Artísticas, Científicas, Desportivas e Outros',
-    '339032': 'Material, Bem ou Serviço para Distribuição Gratuita',
-    '339033': 'Passagens e Despesas com Locomoção',
-    '339035': 'Serviços de Consultoria',
-    '339036': 'Outros Serviços de Terceiros - Pessoa Física - Direito Privado',
-    '339037': 'Locação de Mão de Obra',
-    '339039': 'Outros Serviços de Terceiros - Pessoa Jurídica',
-    '339040': 'Serviços de Tecnologia da Informação e Comunicação - pessoa jurídica',
-    '339047': 'Obrigações Tributárias e Contributivas',
-    '339048': 'Outros Auxílios Financeiros a Pessoas Físicas',
-    '339092': 'Despesas de Exercícios Anteriores - Aplicações Diretas',
-    '339093': 'Indenizações e Restituições',
-    '339139': 'Outros Serviços de Terceiros - Pessoa Física - Direito Público',
-    '339147': 'Obrigações Tributárias e Contributivas em Operações Intraorçamentárias',
-    '339193': 'Indenizações e Restituições em Operações Intraorçamentárias',
-    '449051': 'Obras e Instalações',
-    '449052': 'Equipamentos e Material Permanente',
-    '449039': 'Serviços de terceiros - Pessoa Jurídica (Capital)'
+    '335041': 'CONTRIBUIÇÕES',
+    '335092': 'DESPESAS DE EXERCÍCIOS ANTERIORES',
+    '339014': 'DIÁRIAS - PESSOAL CIVIL',
+    '339018': 'AUXÍLIO FINANCEIRO A ESTUDANTES',
+    '339020': 'AUXÍLIO FINANCEIRO A PESQUISADORES',
+    '339030': 'MATERIAL DE CONSUMO',
+    '339031': 'PREMIAÇÕES CULTURAIS, ARTÍSTICAS, CIENTÍFICAS, DESPORTIVAS E OUTROS',
+    '339032': 'MATERIAL, BEM OU SERVIÇO PARA DISTRIBUIÇÃO GRATUITA',
+    '339033': 'PASSAGENS E DESPESAS COM LOCOMOÇÃO',
+    '339035': 'SERVIÇOS DE CONSULTORIA',
+    '339036': 'OUTROS SERVIÇOS DE TERCEIROS - PESSOA FÍSICA - DIREITO PRIVADO',
+    '339037': 'LOCAÇÃO DE MÃO DE OBRA',
+    '339039': 'OUTROS SERVIÇOS DE TERCEIROS - PESSOA JURÍDICA',
+    '339040': 'SERVIÇOS DE TECNOLOGIA DA INFORMAÇÃO E COMUNICAÇÃO - PESSOA JURÍDICA',
+    '339047': 'OBRIGAÇÕES TRIBUTÁRIAS E CONTRIBUTIVAS',
+    '339048': 'OUTROS AUXÍLIOS FINANCEIROS A PESSOAS FÍSICAS',
+    '339092': 'DESPESAS DE EXERCÍCIOS ANTERIORES - APLICAÇÕES DIRETAS',
+    '339093': 'INDENIZAÇÕES E RESTITUIÇÕES',
+    '339139': 'OUTROS SERVIÇOS DE TERCEIROS - PESSOA FÍSICA - DIREITO PÚBLICO',
+    '339147': 'OBRIGAÇÕES TRIBUTÁRIAS E CONTRIBUTIVAS EM OPERAÇÕES INTRAORÇAMENTÁRIAS',
+    '339193': 'INDENIZAÇÕES E RESTITUIÇÕES EM OPERAÇÕES INTRAORÇAMENTÁRIAS',
+    '449051': 'OBRAS E INSTALAÇÕES',
+    '449052': 'EQUIPAMENTOS E MATERIAL PERMANENTE',
+    '449039': 'SERVIÇOS DE TERCEIROS - PESSOA JURÍDICA (CAPITAL)'
 }
+
+mapa_naturezas_curto = {
+    '335041': 'CONTRIBUIÇÕES',
+    '335092': 'DESP. EXERC. ANTERIORES',
+    '339014': 'DIÁRIAS PESSOAL CIVIL',
+    '339018': 'AUXÍLIO A ESTUDANTES',
+    '339020': 'AUXÍLIO A PESQUISADORES',
+    '339030': 'MATERIAL DE CONSUMO',
+    '339031': 'PREMIAÇÕES E OUTROS',
+    '339032': 'MAT./SERV. DISTRIB. GRATUITA',
+    '339033': 'PASSAGENS E LOCOMOÇÃO',
+    '339035': 'CONSULTORIA',
+    '339036': 'SERV. TERCEIROS PF',
+    '339037': 'LOCAÇÃO DE MÃO DE OBRA',
+    '339039': 'SERV. TERCEIROS PJ',
+    '339040': 'SERV. TIC PJ',
+    '339047': 'OBRIG. TRIBUTÁRIAS',
+    '339048': 'AUX. FINANCEIROS PF',
+    '339092': 'DESP. EXERC. ANTERIORES DIRETA',
+    '339093': 'INDENIZAÇÕES E RESTITUIÇÕES',
+    '339139': 'SERV. TERCEIROS PF PÚBLICO',
+    '339147': 'OBRIGAÇÕES TRIBUTÁRIAS INTRA',
+    '339193': 'INDENIZAÇÕES E RESTITUIÇÕES INTRA',
+    '449051': 'OBRAS E INSTALAÇÕES',
+    '449052': 'EQUIP. E MATERIAL PERMANENTE',
+    '449039': 'SERV. TERCEIROS PJ CAPITAL'
+}
+
 df['Natureza_Despesa_Nome'] = (
     df['Natureza_Despesa_Cod'].str[:6].map(mapa_naturezas_manual)
-    .fillna(df['Natureza_Despesa_Nome'].str.strip().str.title())
+    .fillna(df['Natureza_Despesa_Nome'])
+    .astype(str).str.strip().str.upper()
 )
 
-# 5.3 Padronização de nomes (UG Responsável e Favorecido)
-df['UG_Responsavel_Nome'] = df['UG_Responsavel_Nome'].str.strip().str.title()
-df['Favorecido_Nome'] = df['Favorecido_Nome'].str.strip().str.title()
+df['Natureza_Nome_Curto'] = (
+    df['Natureza_Despesa_Cod'].str[:6].map(mapa_naturezas_curto)
+    .fillna(df['Natureza_Despesa_Nome'])
+    .astype(str).str.strip().str.upper()
+)
+
+# 5.3 Padronização de nomes em maiúsculas (UG Responsável e Favorecido)
+df['UG_Responsavel_Nome'] = df['UG_Responsavel_Nome'].fillna('').astype(str).str.strip().str.upper()
+df['Favorecido_Nome'] = df['Favorecido_Nome'].fillna('').astype(str).str.strip().str.upper()
 
 # 5.4 MÉTRICAS DA EXECUÇÃO ANUAL
 # RAP não processado "a pagar" = inscritos + reinscritos
@@ -125,31 +162,63 @@ df['Total_RAP_Pagos'] = df['RAP_NP_Pagos']
 # (3) Total Geral Pago = Soma de Despesas Pagas + Total RAP Pago
 df['Total_Pago_Geral'] = df['Despesas_Pagas'] + df['Total_RAP_Pagos']
 
-# 5.5 Anos_RAP: apenas os anos de emissão do empenho (sem valores nulos)
+# 5.5 Anos_RAP: apenas os anos de emissão do empenho anterior ao ano vigente
 df['Ano_Emissao_Empenho'] = pd.to_numeric(df['Ano_Emissao_Empenho'], errors='coerce').astype('Int64')
 df['Ano_Lancamento'] = pd.to_numeric(df['Ano_Lancamento'], errors='coerce').astype('Int64')
 ano_vigente = df['Ano_Lancamento'].max()
 df['Ano_Vigente'] = ano_vigente
-df['Anos_RAP'] = np.where(
-    df['Ano_Emissao_Empenho'] != ano_vigente,
-    df['Ano_Emissao_Empenho'],
-    np.nan
-)
-df['Anos_RAP'] = df['Anos_RAP'].astype('Int64')
 
-# 5.6 Colunas de Filtro com Código e Nome (para o Looker Studio)
+mask = df['Ano_Emissao_Empenho'].notna() & (df['Ano_Emissao_Empenho'] != ano_vigente)
+df['Anos_RAP'] = df['Ano_Emissao_Empenho'].where(mask).astype('Int64')
+
+# 5.6 Novas Variáveis e Parâmetros
+tolerancia = 0.01
+
+df['Ano_Empenho_Filtro'] = df['Ano_Emissao_Empenho'].astype('string').fillna('Sem ano')
+df['Origem_Empenho'] = np.where(
+    df['Ano_Emissao_Empenho'] == ano_vigente,
+    'Exercício atual',
+    'Restos a pagar'
+)
+df['Saldo_a_Pagar'] = df['Execucao_Liquidacao'] - df['Total_Pago_Geral']
+df['Qtd_Empenho'] = 1
+df['Flag_Inconsistencia'] = np.where(
+    (df['Saldo_a_Liquidar'] < -tolerancia) |
+    (df['Total_Pago_Geral'] > df['Execucao_Liquidacao'] + tolerancia),
+    'Verificar',
+    'OK'
+)
+df['Data_Atualizacao'] = pd.Timestamp.now().floor('s')
+
+# 5.7 Colunas de Filtro com Código e Nome (para o Looker Studio)
 def limpa_codigo(val):
     if pd.isna(val):
         return ''
-    s = str(val).strip()
-    return s[:-2] if s.endswith('.0') else s
+    try:
+        val_int = int(float(val))
+        s = str(val_int)
+    except (ValueError, TypeError):
+        s = str(val).strip()
+    if s.endswith('.0'):
+        s = s[:-2]
+    return s
+
+def limpa_cnpj_cpf(val):
+    s = limpa_codigo(val)
+    if not s:
+        return ''
+    if len(s) <= 11:
+        return s.zfill(11)
+    elif len(s) <= 14:
+        return s.zfill(14)
+    return s
 
 df['UG_Responsavel_Filtro'] = (
     df['UG_Responsavel_Cod'].map(limpa_codigo).replace('', 'Sem código') +
     ' - ' + df['UG_Responsavel_Nome'].fillna('').astype(str).str.strip()
 )
 df['Favorecido_Filtro'] = (
-    df['Favorecido_CNPJ'].map(limpa_codigo).replace('', 'Sem código') +
+    df['Favorecido_CNPJ'].map(limpa_cnpj_cpf).replace('', 'Sem código') +
     ' - ' + df['Favorecido_Nome'].fillna('').astype(str).str.strip()
 )
 df['Natureza_Filtro'] = (
@@ -165,8 +234,10 @@ print(f"(1) Montante .......... {df['Montante'].sum():>18,.2f}")
 print(f"(2) Execução/Liquidação {df['Execucao_Liquidacao'].sum():>18,.2f}")
 print(f"    Saldo a liquidar .. {df['Saldo_a_Liquidar'].sum():>18,.2f}")
 print(f"(3) Pagamento ......... {df['Total_Pago_Geral'].sum():>18,.2f}")
-print(f"Linhas com saldo negativo: {(df['Saldo_a_Liquidar'] < -0.01).sum()}")
-print(f"Linhas com pagamento > liquidação: {(df['Total_Pago_Geral'] > df['Execucao_Liquidacao'] + 0.01).sum()}")
+print(f"    Saldo a pagar ..... {df['Saldo_a_Pagar'].sum():>18,.2f}")
+print(f"Linhas com saldo negativo: {(df['Saldo_a_Liquidar'] < -tolerancia).sum()}")
+print(f"Linhas com pagamento > liquidação: {(df['Total_Pago_Geral'] > df['Execucao_Liquidacao'] + tolerancia).sum()}")
+print(f"Inconsistências registradas (Flag_Inconsistencia = Verificar): {(df['Flag_Inconsistencia'] == 'Verificar').sum()}")
 
 # 7. Exportar
 print(f"\n-> Exportando {df.shape[0]} linhas...")
